@@ -1,0 +1,306 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>pyMOU reference · mOU EC estimation</title><link rel="stylesheet" href="style.css"></head><body><a class="skip-link" href="#main-content">Skip to content</a><aside class="docs-sidebar"><a class="docs-brand" href="index.html"><span class="brand-mark">mOU</span><span>EC estimation<small>Documentation</small></span></a><nav aria-label="Documentation"><div class="nav-group">Getting started</div><a href="index.html">Overview</a><a href="index.html#installation">Installation</a><a href="index.html#quick-start">Quick start</a><div class="nav-group">User guide</div><a href="pipeline.html">Pipeline notebook</a><div class="nav-group">Reference</div><a href="functions.html">Pipeline functions</a><a href="pymou.html" class="active" aria-current="page">pyMOU · Gilson et al.</a><a href="index.html#source-and-citation">Source & citation</a><div class="nav-group">Project</div><a href="https://github.com/benedetta-mariani/mOU-EC-estimation">Source on GitHub ↗</a></nav><p class="sidebar-note">Multivariate Ornstein–Uhlenbeck<br>effective connectivity</p></aside><div class="doc-heading"><span>Documentation <span aria-hidden="true">/</span> pyMOU reference</span><a href="https://github.com/benedetta-mariani/mOU-EC-estimation/tree/main/ec_estimation">View source ↗</a></div><main class="page" id="main-content"><div class="eyebrow">Model reference</div><h1>pyMOU · Gilson et al.</h1><p class="lead">The core fitting and covariance methods behind the pipeline.</p><p>This page documents the <a href="https://github.com/benedetta-mariani/mOU-EC-estimation/blob/ad260b63af77fa3fe26848ec6613611f369198e1/ec_estimation/pyMOU-master/pymou/mou_model.py">bundled implementation</a> used in the source repository. The first three methods form the fitting path; the last two are useful for inspecting fitted models.</p><div class="jump-links"><a href="#fit_LO">fit_LO</a><a href="#calc_Q0_from_param">calc_Q0_from_param</a><a href="#calc_Qlag_from_param">calc_Qlag_from_param</a><a href="#model_covariance">model_covariance</a><a href="#score">score</a></div><h2>Fitting path</h2><div class="call-path"><code>fit_tau_grid</code> → <code>MOU.fit_LO</code><br><span>↳ <code>calc_Q0_from_param</code> + <code>calc_Qlag_from_param</code></span></div><p class="note">Use these methods with raw pyMOU <code>J</code>. In the paper convention the connectivity is transposed. Empirical matrices in this pipeline come from <code>empirical_moments</code>; the model covariance functions below have a different role.</p><section class="function" id="fit_LO"><h2><code>MOU.fit_LO</code></h2><p class="function-title">Fit the connectivity and noise covariance</p><div class="signature"><code>fit_LO(self, Q0_obj, Q1_obj, lag, prior, tau=None, mask_Q=None, mask_C=None, mask_Sigma=None, min_C=-10000000000.0, max_C=10000000000.0, min_Sigma_diag=0.0, regul_C=0.0, regul_Sigma=0.0, eta_C=0.005, eta_tau=0.0, eta_Sigma=0.05, max_iter=5000, min_iter=10, algo_version=&#x27;2021&#x27;)</code></div><p>Called by <code>fit_tau_grid</code> for each candidate τ. It adjusts the off-diagonal connectivity and the allowed elements of Σ to reproduce the supplied zero-lag and lagged matrices. The pipeline supplies τ explicitly and uses <code>lag=1</code>.</p><pre><code>model = MOU()
+model.fit_LO(Q0, Q1, lag=1, prior=0.0, tau=float(tau),
+             eta_C=0.005, max_iter=100)
+J = model.J
+Sigma = model.Sigma
+diagnostics = model.d_fit</code></pre><p class="small"><a href="https://github.com/benedetta-mariani/mOU-EC-estimation/blob/ad260b63af77fa3fe26848ec6613611f369198e1/ec_estimation/pyMOU-master/pymou/mou_model.py#L307">View in the source repository ↗</a></p><details class="source-details"><summary>Read the implementation</summary><pre><code>def fit_LO(self, Q0_obj, Q1_obj, lag,prior, tau=None, mask_Q=None, mask_C=None,
+        mask_Sigma=None, min_C=-1e10, max_C=1e10, min_Sigma_diag=0.0,
+        regul_C=0.0, regul_Sigma=0.0, eta_C=0.005, eta_tau=0.0,
+        eta_Sigma=0.05, max_iter=5000, min_iter=10, algo_version=&#x27;2021&#x27;):
+    &quot;&quot;&quot;
+    Estimation of MOU parameters (connectivity C with inverse time constant
+    -1/tau on diagonal, input/noise covariance Sigma) performed by Lyapunov
+    optimization as in: Gilson et al. Plos Computational Biology (2016);
+    Gilson et al. Network Neuroscience (2020); and new version as of 2021.
+    For real data, the time constant tau is typically not optimized, but
+    calibrated using the (log) autocovariances and set homogeneously to all
+    nodes.
+
+    Parameters
+    ----------
+    Q0_obj : ndarray of shape (n,n)
+        The zero-lag covariance matrix as objective to reproduce
+    Q1_obj : ndarray of shape (n,n)
+        The lagged covariance matrix as objective to reproduce
+    lag : integer
+        Lag in real time corresponding to Q1_obj. Default are set in &#x27;fit&#x27;
+        and &#x27;fit_th&#x27; methods.
+    mask_Q : boolean ndarray of shape (self.n,self.n); default=None
+        Mask for elements of objective covariance matrices Q0_obj and
+        Q1_obj to be taken into account in optimization. By default, all
+        elements contribute.
+    mask_C : boolean ndarray of shape (self.n,self.n); default=None
+        Mask for tunable elements of connectivity matrix, for example
+        estimated by DTI. By default, all connections are allowed (except
+        self-connections on diagonal, corresponding to -1/tau)
+    mask_Sigma : boolean ndarray of shape ; default=None
+        Mask tunable elements of input covariance matrix Sigma. By default,
+        only diagonal elements of Sigma are tuned.
+    regul_C : float; default=0.0
+        Regularization parameter for C. First try values in range
+        (0.0-0.5).
+    regul_Sigma : float; default=0.0
+        Regularization parameter for Sigma. Useful when  fitting
+    min_C : float; default=-1e10
+        Minimum bound for connectivity estimate C. For instance, useful to
+        prevent negative weights (too negative can lead the system to
+        dynamic instability), especially for empirical/noisy signals.
+    max_C : float; default=1e10
+        Maximum bound for connectivity estimate C. Usually not necessary.
+    min_Sigma_diag : float; default=0.0
+        Minimum bound for input variance estimate Sigma (on diagonal).
+    eta_C : float; default=0.05
+        Learning rate for connectivity C.
+    eta_tau : float; default=0.0
+        Learning rate for tau (inverse on diagonal of Jacobian J).
+    eta_Sigma : float; default=0.05
+        Learning rate for Sigma.
+    max_iter : integer; default=500
+        Maximum for optimization iteration steps. If final number of
+        iterations reaches this maximum, it means the algorithm has not
+        converged (warning raised).
+    min_iter : integer; default=10
+        Minimum for optimization iteration steps before stopping (in case
+        of initial increase of model error).
+    algo_version : string; default=&#x27;2021&#x27;
+        Version of the optimization update; prefer the latest &#x27;2021&#x27;, but
+        for comparison the older versions are &#x27;PCB2016&#x27; and &#x27;NeNe2020&#x27;.
+
+    Returns
+    -------
+    J : ndarray of shape (self.n,self.n)
+        The estimated Jacobian (with number of nodesw self.n=n from Q0_obj
+        and Q1_obj).
+    Sigma : ndarray of of shape (self.n,self.n)
+        Estimated input noise covariance.
+    d_fit : dictionary
+        A dictionary with diagnostics of the fit. Important keys are:
+        &#x27;iterations&#x27;, in addition to &#x27;distance&#x27; (model error) and
+        &#x27;correlation&#x27; (goodness of fit) and their history over the
+        optimization (see also &#x27;fit&#x27; method).
+    &quot;&quot;&quot;
+    #print(&#x27;prova3&#x27;)
+    self.n = Q0_obj.shape[0]
+    # TODO: make better graphics (deal with axes separation, etc.)
+    if algo_version==&#x27;2021&#x27;:
+        def update_J(Delta_Q0, Delta_Q1, Q0, Q1, J, lag):
+            return np.dot( np.linalg.pinv(Q0), - Delta_Q0 + np.dot( Delta_Q1, spl.expm(-J) ) )
+    elif algo_version==&#x27;NeNe2020&#x27;:
+        # Q0^-1
+        def update_J(Delta_Q0, Delta_Q1, Q0, Q1, J):
+            return np.dot( np.linalg.pinv(Q0), Delta_Q0 ) \
+                 + np.dot( Delta_Q0, np.linalg.pinv(Q0) ) \
+                 + np.dot( np.linalg.pinv(Q1), Delta_Q1 ) \
+                 + np.dot( Delta_Q1, np.linalg.pinv(Q1) )
+    elif algo_version==&#x27;PCB2016&#x27;:
+        def update_J(Delta_Q0, Delta_Q1, Q0, Q1, J):
+            return np.dot( np.linalg.pinv(Q0), Delta_Q0 + np.dot( Delta_Q1, spl.expm(-J) ) )
+    else:
+        raise ValueError(&quot;&quot;&quot;Unknown &#x27;algo_version&#x27; for LO optimization&quot;&quot;&quot;)
+
+    # Autocovariance time constant (exponential decay)
+    assert Q0_obj.shape==Q1_obj.shape, &quot;&quot;&quot;Objective covariance matrices
+        should have same shape&quot;&quot;&quot;
+
+    if tau==None:
+        ac = np.hstack((Q0_obj.diagonal(), Q1_obj.diagonal()))
+        log_ac = np.log( np.maximum( ac, ac.max() * 1e-6 ) )
+        v_lag = np.hstack(([0]*self.n, [lag]*self.n))
+        lin_reg = np.polyfit(v_lag, log_ac, 1)
+        tau_obj = -1.0 / lin_reg[0]
+    else:
+        assert type(tau)==float
+        tau_obj = tau
+        #print(&#x27;tau_obj provided&#x27;)
+
+    # mask for objective covariances and parameters to tune (C and Sigma)
+    mask_diag = np.eye(self.n, dtype=bool)
+    if mask_Q is None:
+        mask_Q = np.ones([self.n,self.n], dtype=bool)
+    mask_notQ = np.logical_not(mask_Q)
+    if mask_C is None:
+        # tune all possible connections except self-connections on diagonal
+        mask_C = np.logical_not(np.eye(self.n))
+    if mask_Sigma is None:
+        # independent noise (no cross-covariances for Sigma by default)
+        mask_Sigma = np.eye(self.n, dtype=bool)
+
+    # coefficients to normalize the model error of Q0 and Q1
+    norm_Q0_obj = np.linalg.norm(Q0_obj)
+    norm_Q1_obj = np.linalg.norm(Q1_obj)
+    # optional scaling for weight update
+    # c0 = norm_Q1_obj / ( norm_Q0_obj + norm_Q1_obj )
+    # c1 = 1.0 - c0
+    # Initialize network as unconnected
+    # Connectivity C = 0
+    C = np.zeros([self.n, self.n], dtype=float) + prior
+    # vector of time constants
+    tau = np.copy(tau_obj)
+    # Input covariance such that Sigma = -J.T Q0 - Q0 J (Lyapunov eq) with
+    # J being diagonal with terms 1/tau_obj
+    Sigma =2 / tau_obj * Q0_obj
+    Sigma[np.logical_not(mask_Sigma)] = 0.0
+    #print(&#x27;ciao&#x27;)
+
+    # Best distance between model and empirical data
+    best_dist = 1e10
+    best_Pearson = 0.0
+
+    # Arrays to record model parameters and outputs
+    # model error = matrix distance between FC matrices
+    dist_Q_hist = np.zeros([max_iter], dtype=float)
+    # Pearson correlation between model and objective FC matrices
+    simil_Q_hist = np.zeros([max_iter], dtype=float)
+
+    # identity matrix
+    id_mat = np.eye(self.n, dtype=float)
+    #print(id_mat)
+
+    # run the optimization process
+    stop_opt = False
+    i_iter = 0
+    while not stop_opt:
+        #print(i_iter)
+        # calculate Jacobian of dynamical system
+        J = -id_mat / tau + C
+        # Covariances Q0 without lag and Q1 with lag for model
+        Q0 = self.calc_Q0_from_param(J, Sigma)
+        Q1 = self.calc_Qlag_from_param(Q0, J, lag)
+        # difference matrices between model and objectives
+        Delta_Q0 = Q0_obj - Q0
+        Delta_Q1 = Q1_obj - Q1
+        Delta_Q0[mask_notQ] = 0.0
+        Delta_Q1[mask_notQ] = 0.0
+        # Calculate error between model and empirical data as evaluated by
+        # matrix distance (for Q0 and Qlag)
+        dist_Q0 = np.linalg.norm(Delta_Q0) / norm_Q0_obj
+        dist_Q1 = np.linalg.norm(Delta_Q1) / norm_Q1_obj
+        dist_Q_hist[i_iter] = 0.5 * (dist_Q0 + dist_Q1)
+        # Calculate similarity between model and empirical data evaluated
+        # by the Pearson correlation coefficient (for Q0 and Qlag)
+        simil_Q0 = stt.pearsonr( Q0.reshape(-1), Q0_obj.reshape(-1) )[0]
+        simil_Q1 = stt.pearsonr( Q1.reshape(-1), Q1_obj.reshape(-1) )[0]
+        simil_Q_hist[i_iter] = 0.5 * (simil_Q0  + simil_Q1)
+        # Best fit given by best Pearson correlation coefficient
+        # for both Q0 and Qlag (better than matrix distance)
+        if dist_Q_hist[i_iter] &lt; best_dist:
+            best_dist = dist_Q_hist[i_iter]
+            best_Pearson = simil_Q_hist[i_iter]
+            J_best = np.copy(J)
+            Sigma_best = np.copy(Sigma)
+        else:
+            # wait at least 5 optimization steps before stopping
+            stop_opt = i_iter &gt; min_iter
+        # Jacobian update with weighted FC updates depending on respective error
+        Delta_J = update_J(Delta_Q0, Delta_Q1, Q0, Q1, J, lag) ## lag ==1
+        # Update effective conectivity matrix (regularization is L2)
+        C[mask_C] += eta_C * Delta_J[mask_C]
+        C[mask_C] -= eta_C * regul_C * C[mask_C]
+        C[mask_C] = np.clip(C[mask_C], min_C, max_C)
+        # update tau
+        tau += eta_tau * tau**2 * Delta_J.diagonal().mean()
+        # Update noise matrix Sigma (regularization is L2)
+        Delta_Sigma = - np.dot(J.T, Delta_Q0) - np.dot(Delta_Q0, J)
+        Sigma[mask_Sigma] += eta_Sigma * Delta_Sigma[mask_Sigma]
+        Sigma[mask_Sigma] -= eta_Sigma * regul_Sigma * Sigma[mask_Sigma]
+        Sigma[mask_diag] = np.maximum(Sigma[mask_diag], min_Sigma_diag)
+        # optimize tau
+        # Delta_tau =
+        # Check if max allowed number of iterations have been reached
+        if i_iter &gt;= max_iter-1:
+            stop_opt = True
+            print(&quot;Optimization did not converge. Maximum number of iterations arrived.&quot;)
+        # Check if iteration has finished or still continues
+        if stop_opt:
+            self.d_fit[&#x27;iterations&#x27;] = i_iter+1
+            self.d_fit[&#x27;distance&#x27;] = best_dist
+            self.d_fit[&#x27;correlation&#x27;] = best_Pearson
+            self.d_fit[&#x27;distance history&#x27;] = dist_Q_hist[:i_iter+1]
+            self.d_fit[&#x27;correlation history&#x27;] = simil_Q_hist[:i_iter+1]
+        else:
+            i_iter += 1
+    # Save the results and return
+    self.J = J_best # matrix
+    self.Sigma = Sigma_best # matrix
+    self.d_fit[&#x27;status&#x27;] = &#x27;fitted&#x27;
+
+    return self
+</code></pre></details></section><section class="function" id="calc_Q0_from_param"><h2><code>MOU.calc_Q0_from_param</code></h2><p class="function-title">Compute the stationary covariance</p><div class="signature"><code>calc_Q0_from_param(self, J, Sigma)</code></div><p>Called inside <code>fit_LO</code>. It solves the continuous Lyapunov equation in the convention of the bundled implementation: <code>J.T @ Q0 + Q0 @ J + Sigma = 0</code>. This returns the model covariance, not an empirical estimate from the time series.</p><pre><code>Q0_model = model.calc_Q0_from_param(model.J, model.Sigma)</code></pre><p class="small"><a href="https://github.com/benedetta-mariani/mOU-EC-estimation/blob/ad260b63af77fa3fe26848ec6613611f369198e1/ec_estimation/pyMOU-master/pymou/mou_model.py#L151">View in the source repository ↗</a></p><details class="source-details"><summary>Read the implementation</summary><pre><code>def calc_Q0_from_param(self, J, Sigma):
+    &quot;&quot;&quot;
+    Calculates the zero-lag covariance matrix from a Jacobian J and an
+    input covariance matrix Sigma
+
+    Parameters
+    ----------
+    J : ndarray of rank 2
+        The Jacobian matrix. Shape [n x n]
+    Sigma : ndarray of rank 2
+        The input covariance matrix. Shape [n x n]
+
+    Returns
+    -------
+    Q0 : ndarray of rank 2
+        The theoretical zero-lag covariance matrix.
+        Shape [n, n]
+    &quot;&quot;&quot;
+    Q0 = spl.solve_continuous_lyapunov(J.T, -Sigma)
+    return Q0
+</code></pre></details></section><section class="function" id="calc_Qlag_from_param"><h2><code>MOU.calc_Qlag_from_param</code></h2><p class="function-title">Propagate the covariance to a positive lag</p><div class="signature"><code>calc_Qlag_from_param(self, Q0, J, lag)</code></div><p>Called inside <code>fit_LO</code>. It evaluates <code>Q0 @ expm(J * lag)</code>. Keep the same matrix orientation when comparing this result with the empirical lagged matrix.</p><pre><code>Qlag_model = model.calc_Qlag_from_param(Q0_model, model.J, lag=1)</code></pre><p class="small"><a href="https://github.com/benedetta-mariani/mOU-EC-estimation/blob/ad260b63af77fa3fe26848ec6613611f369198e1/ec_estimation/pyMOU-master/pymou/mou_model.py#L173">View in the source repository ↗</a></p><details class="source-details"><summary>Read the implementation</summary><pre><code>def calc_Qlag_from_param(self, Q0, J, lag):
+    &quot;&quot;&quot;
+    Method to calculate  the adequate specific method.
+
+    Parameters
+    ----------
+    Q0 : ndarray of rank 2
+        The zero-lag covariance matrix. Shape [n x n]
+    J : ndarray of rank 2
+        The Jacobian matrix. Shape [n x n]
+    lag : float
+        The covariance lag
+
+    Returns
+    -------
+    Qlag : ndarray of rank 2
+        The theoretical covariance matrix with lag.
+        Shape [n, n]
+    &quot;&quot;&quot;
+    Qlag = np.dot( Q0, spl.expm( J * lag ) )
+    return Qlag
+</code></pre></details></section><section class="function" id="model_covariance"><h2><code>MOU.model_covariance</code></h2><p class="function-title">Evaluate a fitted model at another lag</p><div class="signature"><code>model_covariance(self, tau=0.0)</code></div><p>A convenience method for inspecting an already fitted model. Here the argument named <code>tau</code> is the covariance lag; it is distinct from the decay timescale passed to <code>fit_LO</code>. This helper is not an additional fitting step in the pipeline.</p><pre><code>Q0_model = model.model_covariance(tau=0.0)
+Q1_model = model.model_covariance(tau=1.0)</code></pre><p class="small"><a href="https://github.com/benedetta-mariani/mOU-EC-estimation/blob/ad260b63af77fa3fe26848ec6613611f369198e1/ec_estimation/pyMOU-master/pymou/mou_model.py#L612">View in the source repository ↗</a></p><details class="source-details"><summary>Read the implementation</summary><pre><code>def model_covariance(self, tau=0.0):
+    &quot;&quot;&quot;
+    Calculates theoretical (lagged) covariances of the model given the
+    parameters (forward step). Notice that this is not the empirical
+    covariance matrix as estimated from simulated time series.
+
+    Parameters
+    ----------
+    tau : scalar
+        The time lag to calculate the covariance. It can be a positive or
+        negative.
+
+    Returns
+    -------
+    FC : ndarray of rank-2
+        The (lagged) covariance matrix.
+    &quot;&quot;&quot;
+
+    # Calculate zero lag-covariance Q0 by solving Lyapunov equation
+    Q0 = spl.solve_continuous_lyapunov(self.J.T, -self.Sigma)
+    # Calculate the effect of the lag (still valid for tau = 0.0)
+    if tau &gt;= 0.0:
+        return np.dot(Q0, spl.expm(tau * self.J))
+    else:
+        return np.dot(spl.expm(-tau * self.J.T), Q0)
+</code></pre></details></section><section class="function" id="score"><h2><code>MOU.score</code></h2><p class="function-title">Read the covariance reconstruction score</p><div class="signature"><code>score(self)</code></div><p>Returns the stored mean Pearson correlation between the fitted and target zero-lag and lagged matrices. It is a reconstruction diagnostic; it is not the precision-reference score used to select τ.</p><pre><code>reconstruction_score = model.score()</code></pre><p class="small"><a href="https://github.com/benedetta-mariani/mOU-EC-estimation/blob/ad260b63af77fa3fe26848ec6613611f369198e1/ec_estimation/pyMOU-master/pymou/mou_model.py#L598">View in the source repository ↗</a></p><details class="source-details"><summary>Read the implementation</summary><pre><code>def score(self):
+    &quot;&quot;&quot;
+    Returns the correlation between goodness of fit of the MOU to the
+    data, measured by the Pearson correlation between the obseved
+    covariances and the model covariances.
+    &quot;&quot;&quot;
+    try:
+        return self.d_fit[&#x27;correlation&#x27;]
+    except:
+        print(&#x27;The model should be fitted first.&#x27;)
+        return np.nan
+</code></pre></details></section><h2 id="attribution">Attribution &amp; license</h2><p>pyMOU: Copyright © 2019–2022 Andrea Insabato, Gorka Zamora-López and Matthieu Gilson. The method implementations displayed above are reproduced without modification from the bundled source and are released under the <a href="LICENSE-pyMOU.txt">Apache License 2.0</a>.</p><p>The pipeline preparation and τ-selection functions are documented <a href="functions.html">separately</a>. They are distinct from the pyMOU estimation methods.</p></main><footer>Benedetta Mariani · <a href="https://github.com/benedetta-mariani/mOU-EC-estimation">Source repository</a> · <a href="https://github.com/benedetta-mariani/mOU-EC-estimation/tree/ad260b63af77fa3fe26848ec6613611f369198e1/ec_estimation">Source version</a><br>Uses the bundled <a href="https://github.com/mb-BCA/pyMOU">pyMOU</a> implementation; see its <a href="https://github.com/benedetta-mariani/mOU-EC-estimation/blob/main/ec_estimation/pyMOU-master/LICENSE">Apache 2.0 license</a>.</footer></body></html>
