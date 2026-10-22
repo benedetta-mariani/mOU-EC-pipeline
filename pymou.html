@@ -79,7 +79,6 @@ diagnostics = model.d_fit</code></pre><p class="small"><a href="https://github.c
         &#x27;correlation&#x27; (goodness of fit) and their history over the
         optimization (see also &#x27;fit&#x27; method).
     &quot;&quot;&quot;
-    #print(&#x27;prova3&#x27;)
     self.n = Q0_obj.shape[0]
     # TODO: make better graphics (deal with axes separation, etc.)
     if algo_version==&#x27;2021&#x27;:
@@ -140,7 +139,7 @@ diagnostics = model.d_fit</code></pre><p class="small"><a href="https://github.c
     # J being diagonal with terms 1/tau_obj
     Sigma =2 / tau_obj * Q0_obj
     Sigma[np.logical_not(mask_Sigma)] = 0.0
-    #print(&#x27;ciao&#x27;)
+    
 
     # Best distance between model and empirical data
     best_dist = 1e10
