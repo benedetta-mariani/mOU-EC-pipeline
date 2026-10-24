@@ -7508,8 +7508,8 @@ a.anchor-link {
     white-space: normal;
   }
 </style>
-<!-- End of mermaid configuration --><link rel="stylesheet" href="style.css?v=docs-20261022"></head>
-<body class="notebook-page"><a class="skip-link" href="#main-content">Skip to content</a><aside class="docs-sidebar"><a class="docs-brand" href="index.html"><span class="brand-mark">mOU</span><span>EC estimation<small>Documentation</small></span></a><nav aria-label="Documentation"><div class="nav-group">Getting started</div><a href="index.html">Overview</a><a href="index.html#installation">Installation</a><a href="index.html#quick-start">Quick start</a><div class="nav-group">User guide</div><a href="pipeline.html" class="active" aria-current="page">Pipeline notebook</a><div class="nav-group">Reference</div><a href="functions.html">Pipeline functions</a><a href="pymou.html">pyMOU · Gilson et al.</a><a href="index.html#source-and-citation">Source & citation</a><div class="nav-group">Project</div><a href="https://github.com/benedetta-mariani/mOU-EC-estimation">Source on GitHub ↗</a></nav><p class="sidebar-note">Multivariate Ornstein–Uhlenbeck<br>effective connectivity</p></aside><div class="doc-heading"><span>Documentation <span aria-hidden="true">/</span> Pipeline notebook</span><a href="https://github.com/benedetta-mariani/mOU-EC-estimation/tree/main/ec_estimation">View source ↗</a></div><div class="notebook-intro small">Pipeline notebook · <a href="https://github.com/benedetta-mariani/mOU-EC-estimation/blob/main/ec_estimation/EC_pipeline_precision.ipynb">Open on GitHub</a> · <a href="https://raw.githubusercontent.com/benedetta-mariani/mOU-EC-estimation/main/ec_estimation/EC_pipeline_precision.ipynb" download>Download notebook</a></div>
+<!-- End of mermaid configuration --><link rel="stylesheet" href="style.css?v=functions-20261024"></head>
+<body class="notebook-page"><a class="skip-link" href="#main-content">Skip to content</a><aside class="docs-sidebar"><a class="docs-brand" href="index.html"><span class="brand-mark">mOU</span><span>EC estimation<small>Code &amp; notebook</small></span></a><nav aria-label="Functions and notebook"><a href="index.html" class="">Home</a><a href="pipeline.html" class="active">Pipeline notebook</a><div class="nav-group own-label">Pipeline functions <span>Benedetta Mariani</span></div><a href="functions.html#prepare_timeseries" class="own-function"><code>prepare_timeseries</code></a><a href="functions.html#empirical_moments" class="own-function"><code>empirical_moments</code></a><a href="functions.html#fit_tau_grid" class="own-function"><code>fit_tau_grid</code></a><a href="functions.html#select_precision_reference" class="own-function"><code>select_precision_reference</code></a><a href="functions.html#plot_precision_result" class="own-function"><code>plot_precision_result</code></a><a href="functions.html#show_figure" class="own-function"><code>show_figure</code></a><div class="nav-group pymou-label">pyMOU functions <span>Insabato, Zamora-López &amp; Gilson</span></div><a href="pymou.html#fit_LO" class="pymou-function"><code>fit_LO</code></a><a href="pymou.html#calc_Q0_from_param" class="pymou-function"><code>calc_Q0_from_param</code></a><a href="pymou.html#calc_Qlag_from_param" class="pymou-function"><code>calc_Qlag_from_param</code></a><a href="pymou.html#model_covariance" class="pymou-function"><code>model_covariance</code></a><a href="pymou.html#score" class="pymou-function"><code>score</code></a><div class="sidebar-resources"><a href="guide.html" class="">Setup & references</a><a href="https://github.com/benedetta-mariani/mOU-EC-estimation" class="">Source on GitHub ↗</a></div></nav></aside><div class="doc-heading"><span>Documentation <span aria-hidden="true">/</span> Pipeline notebook</span><a href="https://github.com/benedetta-mariani/mOU-EC-estimation/tree/main/ec_estimation">View source ↗</a></div><div class="notebook-intro small">Pipeline notebook · <a href="https://github.com/benedetta-mariani/mOU-EC-estimation/blob/main/ec_estimation/EC_pipeline_precision.ipynb">Open on GitHub</a> · <a href="https://raw.githubusercontent.com/benedetta-mariani/mOU-EC-estimation/main/ec_estimation/EC_pipeline_precision.ipynb" download>Download notebook</a></div>
 <main class="page" id="main-content">
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=q1-0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -7527,20 +7527,6 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="1.-Set-the-participant-and-input-files">1. Set the participant and input files<a class="anchor-link" href="#1.-Set-the-participant-and-input-files">¶</a></h2><p>Choose the subject, run and tau grid below. The example uses the local pyMOU source and the existing 100-to-62 mapping. Keep the same preprocessing when comparing or reusing fits.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=3a354436-7323-415e-a0dd-5b9dc5782364">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="c1">#os.listdir(Path.home() / "hcp_parcellated")</span>
-</pre></div>
-</div>
 </div>
 </div>
 </div>
@@ -7584,34 +7570,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=06d04fdf-442a-417b-acd9-a4ebd6bf192b">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">TAUS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=36a02d6b-6939-461b-a0b7-118bfd0844bd">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1">#ls /home/benedetta/hcp_parcellated</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=q1-2">
+</div><div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=q1-2">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7804,19 +7763,6 @@ a.anchor-link {
 <p><code>fit_tau_grid</code> preprocesses the time series, computes Q0 and Q1, and fits a separate mOU model for each value in <code>TAUS</code>. It returns the full <code>J_grid</code> and <code>Sigma_grid</code>, together with convergence diagnostics. The next cell selects tau from the precision reference.</p>
 <p>The grids stay in memory for the comparisons below. Only the selected matrices and compact diagnostics are saved to disk.</p>
 <p>The fitting function returns the model at each tau without selecting one. The search starts after the initial points with corr(asym(J), asym(Q1)) &gt;= 0.9. All retained points must have a finite antisymmetric correlation below 0.9.</p>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=d6921ba0-f8f3-4623-ac5d-369471699581">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">fitted</span>
-</pre></div>
-</div>
 </div>
 </div>
 </div>
@@ -8018,33 +7964,6 @@ a.anchor-link {
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=487fd2c3-63cb-47dd-9b57-7fbb9a94b93b">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">TAUS</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=364991d4-465a-4b9f-b244-4a1355495724">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span> 
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</main>
+</div></main>
 <footer>Benedetta Mariani · <a href="https://github.com/benedetta-mariani/mOU-EC-estimation">Source repository</a> · <a href="https://github.com/benedetta-mariani/mOU-EC-estimation/tree/ad260b63af77fa3fe26848ec6613611f369198e1/ec_estimation">Source version</a><br>Uses the bundled <a href="https://github.com/mb-BCA/pyMOU">pyMOU</a> implementation; see its <a href="https://github.com/benedetta-mariani/mOU-EC-estimation/blob/main/ec_estimation/pyMOU-master/LICENSE">Apache 2.0 license</a>.</footer></body>
 </html>
