@@ -79,9 +79,7 @@ diagnostics = model.d_fit</code></pre><p class="small"><a href="https://github.c
         &#x27;correlation&#x27; (goodness of fit) and their history over the
         optimization (see also &#x27;fit&#x27; method).
     &quot;&quot;&quot;
-    #print(&#x27;prova3&#x27;)
     self.n = Q0_obj.shape[0]
-    # TODO: make better graphics (deal with axes separation, etc.)
     if algo_version==&#x27;2021&#x27;:
         def update_J(Delta_Q0, Delta_Q1, Q0, Q1, J, lag):
             return np.dot( np.linalg.pinv(Q0), - Delta_Q0 + np.dot( Delta_Q1, spl.expm(-J) ) )
@@ -111,7 +109,6 @@ diagnostics = model.d_fit</code></pre><p class="small"><a href="https://github.c
     else:
         assert type(tau)==float
         tau_obj = tau
-        #print(&#x27;tau_obj provided&#x27;)
 
     # mask for objective covariances and parameters to tune (C and Sigma)
     mask_diag = np.eye(self.n, dtype=bool)
@@ -128,9 +125,6 @@ diagnostics = model.d_fit</code></pre><p class="small"><a href="https://github.c
     # coefficients to normalize the model error of Q0 and Q1
     norm_Q0_obj = np.linalg.norm(Q0_obj)
     norm_Q1_obj = np.linalg.norm(Q1_obj)
-    # optional scaling for weight update
-    # c0 = norm_Q1_obj / ( norm_Q0_obj + norm_Q1_obj )
-    # c1 = 1.0 - c0
     # Initialize network as unconnected
     # Connectivity C = 0
     C = np.zeros([self.n, self.n], dtype=float) + prior
@@ -140,7 +134,6 @@ diagnostics = model.d_fit</code></pre><p class="small"><a href="https://github.c
     # J being diagonal with terms 1/tau_obj
     Sigma =2 / tau_obj * Q0_obj
     Sigma[np.logical_not(mask_Sigma)] = 0.0
-    #print(&#x27;ciao&#x27;)
 
     # Best distance between model and empirical data
     best_dist = 1e10
@@ -154,13 +147,11 @@ diagnostics = model.d_fit</code></pre><p class="small"><a href="https://github.c
 
     # identity matrix
     id_mat = np.eye(self.n, dtype=float)
-    #print(id_mat)
 
     # run the optimization process
     stop_opt = False
     i_iter = 0
     while not stop_opt:
-        #print(i_iter)
         # calculate Jacobian of dynamical system
         J = -id_mat / tau + C
         # Covariances Q0 without lag and Q1 with lag for model
@@ -204,8 +195,6 @@ diagnostics = model.d_fit</code></pre><p class="small"><a href="https://github.c
         Sigma[mask_Sigma] += eta_Sigma * Delta_Sigma[mask_Sigma]
         Sigma[mask_Sigma] -= eta_Sigma * regul_Sigma * Sigma[mask_Sigma]
         Sigma[mask_diag] = np.maximum(Sigma[mask_diag], min_Sigma_diag)
-        # optimize tau
-        # Delta_tau =
         # Check if max allowed number of iterations have been reached
         if i_iter &gt;= max_iter-1:
             stop_opt = True
@@ -303,4 +292,4 @@ Q1_model = model.model_covariance(tau=1.0)</code></pre><p class="small"><a href=
     except:
         print(&#x27;The model should be fitted first.&#x27;)
         return np.nan
-</code></pre></details></section><h2 id="attribution">Attribution &amp; license</h2><p>pyMOU: Copyright © 2019–2022 Andrea Insabato, Gorka Zamora-López and Matthieu Gilson. The method implementations displayed above are reproduced without modification from the bundled source and are released under the <a href="LICENSE-pyMOU.txt">Apache License 2.0</a>.</p><p>The pipeline preparation and τ-selection functions are documented <a href="functions.html">separately</a>. They are distinct from the pyMOU estimation methods.</p></main><footer>Benedetta Mariani · <a href="https://github.com/benedetta-mariani/mOU-EC-estimation">Pipeline repository</a> · <a href="https://github.com/benedetta-mariani/mOU-EC-estimation/tree/ad260b63af77fa3fe26848ec6613611f369198e1/ec_estimation">Pipeline version</a><br>Uses the bundled <a href="https://github.com/mb-BCA/pyMOU">pyMOU</a> implementation; see its <a href="https://github.com/benedetta-mariani/mOU-EC-estimation/blob/main/ec_estimation/pyMOU-master/LICENSE">Apache 2.0 license</a>.</footer></body></html>
+</code></pre></details></section><h2 id="attribution">Attribution &amp; license</h2><p>pyMOU: Copyright © 2019–2022 Andrea Insabato, Gorka Zamora-López and Matthieu Gilson. The method implementations displayed above are reproduced from the bundled source, with commented debug statements and development notes removed. Computational statements are unchanged. The code is released under the <a href="LICENSE-pyMOU.txt">Apache License 2.0</a>.</p><p>The pipeline preparation and τ-selection functions are documented <a href="functions.html">separately</a>. They are distinct from the pyMOU estimation methods.</p></main><footer>Benedetta Mariani · <a href="https://github.com/benedetta-mariani/mOU-EC-estimation">Pipeline repository</a> · <a href="https://github.com/benedetta-mariani/mOU-EC-estimation/tree/ad260b63af77fa3fe26848ec6613611f369198e1/ec_estimation">Pipeline version</a><br>Uses the bundled <a href="https://github.com/mb-BCA/pyMOU">pyMOU</a> implementation; see its <a href="https://github.com/benedetta-mariani/mOU-EC-estimation/blob/main/ec_estimation/pyMOU-master/LICENSE">Apache 2.0 license</a>.</footer></body></html>
