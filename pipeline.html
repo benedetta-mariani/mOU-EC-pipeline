@@ -7537,37 +7537,37 @@ a.anchor-link {
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre>from pathlib import Path
-import sys
-import json
-import numpy as np
-import matplotlib.pyplot as plt
-from threadpoolctl import threadpool_limits
+<div class="highlight hl-ipython3"><pre><span class="k">from</span> <span class="n">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
+<span class="k">import</span> <span class="n">sys</span>
+<span class="k">import</span> <span class="n">json</span>
+<span class="k">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="k">import</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="k">from</span> <span class="n">threadpoolctl</span> <span class="k">import</span> <span class="n">threadpool_limits</span>
 
-# Open the notebook from the folder containing the pipeline module and mapping.
-ROOT = Path.cwd()
-if not (ROOT / &quot;mou_pipeline.py&quot;).is_file():
-    raise FileNotFoundError(&quot;Open this notebook from the ec_estimation folder.&quot;)
-sys.path.insert(0, str(ROOT))
-from mou_pipeline import fit_tau_grid, prepare_timeseries, empirical_moments
+<span class="c1"># Open the notebook from the folder containing the pipeline module and mapping.</span>
+<span class="n">ROOT</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="o">(</span><span class="o">)</span>
+<span class="k">if</span> <span class="k">not</span> <span class="o">(</span><span class="n">ROOT</span> <span class="o">/</span> <span class="s">&quot;mou_pipeline.py&quot;</span><span class="o">)</span><span class="o">.</span><span class="n">is_file</span><span class="o">(</span><span class="o">)</span><span class="o">:</span>
+    <span class="k">raise</span> <span class="nb">FileNotFoundError</span><span class="o">(</span><span class="s">&quot;Open this notebook from the ec_estimation folder.&quot;</span><span class="o">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="nb">str</span><span class="o">(</span><span class="n">ROOT</span><span class="o">)</span><span class="o">)</span>
+<span class="k">from</span> <span class="n">mou_pipeline</span> <span class="k">import</span> <span class="n">fit_tau_grid</span><span class="o">,</span> <span class="n">prepare_timeseries</span><span class="o">,</span> <span class="n">empirical_moments</span>
 
-# Set these folders to the locations of your data and results.
-DATA_DIR = Path(&quot;data&quot;)
-OUTPUT_DIR = Path(&quot;results&quot;)
-SUBJECT_ID = &quot;101915&quot;
-RUN = &quot;REST1_LR&quot;
-INPUT_FILE = DATA_DIR / f&quot;{SUBJECT_ID}_{RUN}.npy&quot;
-OUTPUT_FILE = OUTPUT_DIR / f&quot;{SUBJECT_ID}_{RUN}_precision_pipeline.npz&quot;
-OVERWRITE = True  # Allow replacing the saved result.
-FORCE_REFIT = True  # Set True to estimate every J again instead of reusing a saved fit.
-TR = 0.72
-TAUS = np.logspace(-0.5, 2, 50)
-MAX_ITER = 100
-mapping = np.loadtxt(ROOT / &quot;mapping_schaefer100_to62.csv&quot;, delimiter=&quot;,&quot;, dtype=int)
-print(&quot;Subject:&quot;, SUBJECT_ID, &quot;Run:&quot;, RUN, &quot;Input:&quot;, INPUT_FILE)
+<span class="c1"># Set these folders to the locations of your data and results.</span>
+<span class="n">DATA_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="o">(</span><span class="s">&quot;data&quot;</span><span class="o">)</span>
+<span class="n">OUTPUT_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="o">(</span><span class="s">&quot;results&quot;</span><span class="o">)</span>
+<span class="n">SUBJECT_ID</span> <span class="o">=</span> <span class="s">&quot;101915&quot;</span>
+<span class="n">RUN</span> <span class="o">=</span> <span class="s">&quot;REST1_LR&quot;</span>
+<span class="n">INPUT_FILE</span> <span class="o">=</span> <span class="n">DATA_DIR</span> <span class="o">/</span> <span class="s">f&quot;{SUBJECT_ID}_{RUN}.npy&quot;</span>
+<span class="n">OUTPUT_FILE</span> <span class="o">=</span> <span class="n">OUTPUT_DIR</span> <span class="o">/</span> <span class="s">f&quot;{SUBJECT_ID}_{RUN}_precision_pipeline.npz&quot;</span>
+<span class="n">OVERWRITE</span> <span class="o">=</span> <span class="k">True</span>  <span class="c1"># Allow replacing the saved result.</span>
+<span class="n">FORCE_REFIT</span> <span class="o">=</span> <span class="k">True</span>  <span class="c1"># Set True to estimate every J again instead of reusing a saved fit.</span>
+<span class="n">TR</span> <span class="o">=</span> <span class="mi">0.72</span>
+<span class="n">TAUS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="o">(</span><span class="o">-</span><span class="mi">0.5</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">50</span><span class="o">)</span>
+<span class="n">MAX_ITER</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">mapping</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="o">(</span><span class="n">ROOT</span> <span class="o">/</span> <span class="s">&quot;mapping_schaefer100_to62.csv&quot;</span><span class="o">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s">&quot;,&quot;</span><span class="o">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="o">)</span>
+<span class="nb">print</span><span class="o">(</span><span class="s">&quot;Subject:&quot;</span><span class="o">,</span> <span class="n">SUBJECT_ID</span><span class="o">,</span> <span class="s">&quot;Run:&quot;</span><span class="o">,</span> <span class="n">RUN</span><span class="o">,</span> <span class="s">&quot;Input:&quot;</span><span class="o">,</span> <span class="n">INPUT_FILE</span><span class="o">)</span>
 
-# Optional compatible grid saved by an earlier fit.
-PREVIOUS_FIT = OUTPUT_DIR / f&quot;{SUBJECT_ID}_{RUN}_Q1_pipeline.npz&quot;
+<span class="c1"># Optional compatible grid saved by an earlier fit.</span>
+<span class="n">PREVIOUS_FIT</span> <span class="o">=</span> <span class="n">OUTPUT_DIR</span> <span class="o">/</span> <span class="s">f&quot;{SUBJECT_ID}_{RUN}_Q1_pipeline.npz&quot;</span>
 </pre></div>
 </div>
 </div>
